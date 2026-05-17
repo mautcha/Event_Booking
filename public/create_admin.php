@@ -41,9 +41,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<div style='background-color:#ffff00; padding: 10px; margin-bottom: 20px;'>
+<div style='background-color:#ffff00'>
     <center>
-        <h2 style="color:white; margin:0;">Add New Administrator</h2>
+        <p style="color:white"><h2>Add New Administrator</h2></p>
     </center>
 </div>
 
