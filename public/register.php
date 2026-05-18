@@ -3,12 +3,10 @@
     include '../config/connect.php';
     require_once '../includes/header.php';
 
-    // Initialize variables to store message details
     $messageText = "";
     $messageType = "";
 
     if(isset($_POST['btnRegister'])){
-        // retrieve data from form
         $name = $_POST['txtname'];
         $email = $_POST['txtemail'];
         $pwd = $_POST['txtpassword'];
@@ -20,28 +18,24 @@
         try {
             $db->beginTransaction();
             
-            // save data to Users table
             $sql1 = "INSERT INTO Users(name, email, password, role) VALUES (?, ?, ?, 'student')";
             $stmt1 = $db->prepare($sql1);
             $stmt1->execute([$name, $email, $hashed_pword]);
             
             $userID = $db->lastInsertId();
             
-            // save data to Student table
             $sql2 = "INSERT INTO Student(userID, program, yearLevel) VALUES (?, ?, ?)";
             $stmt2 = $db->prepare($sql2);
             $stmt2->execute([$userID, $program, $yearlevel]);
             
             $db->commit();
             
-            // Success text box variables (Green Alert)
             $messageText = "New record saved successfully! You can now login.";
             $messageType = "success";
                   
         } catch(Exception $e) {
             $db->rollBack();
             
-            // Failure text box variables (Red Alert)
             $messageText = "Registration failed. That email might already be used.";
             $messageType = "danger";
         }

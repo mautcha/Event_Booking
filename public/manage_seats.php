@@ -17,7 +17,7 @@ $seats = $seatModel->getSeatsByEvent($eventID);
 require_once '../includes/header.php';
 ?>
 <div class="mt-4">
-    <h2>Manage Seats for Event #<?= htmlspecialchars($eventID) ?></h2>
+    <h2>Manage Seats for Event
     <a href="manage_events.php" class="btn btn-secondary mb-3">Back to Events</a>
     
     <table class="table table-bordered">

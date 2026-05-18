@@ -13,29 +13,18 @@ if (!$adminID) {
     exit();
 }
 
-// 1. Handle the UPDATE form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    try {
-        $db->beginTransaction();
         
-        // Update USER table
         $stmt1 = $db->prepare("UPDATE USERS SET name = ?, email = ? WHERE userID = ?");
         $stmt1->execute([$_POST['name'], $_POST['email'], $adminID]);
         
-        // Update ADMIN table
         $stmt2 = $db->prepare("UPDATE ADMIN SET position = ?, department = ? WHERE userID = ?");
         $stmt2->execute([$_POST['position'], $_POST['department'], $adminID]);
-        
-        $db->commit();
+    
         header("Location: manage_admins.php");
         exit();
-    } catch (Exception $e) {
-        $db->rollBack();
-        $error = "Failed to update admin.";
-    }
 }
 
-// 2. Fetch current data to populate the form
 $query = "SELECT u.name, u.email, a.position, a.department FROM USERS u JOIN ADMIN a ON u.userID = a.userID WHERE u.userID = ?";
 $stmt = $db->prepare($query);
 $stmt->execute([$adminID]);

@@ -8,12 +8,10 @@ class Reservation {
         try {
             $this->conn->beginTransaction();
 
-            // 1. Create Reservation
             $query1 = "INSERT INTO RESERVATION (userID, seatID, timestamp, status) VALUES (?, ?, NOW(), 'confirmed')";
             $stmt1 = $this->conn->prepare($query1);
             $stmt1->execute([$userID, $seatID]);
 
-            // 2. Update Seat Status
             $query2 = "UPDATE SEAT SET status = 'reserved' WHERE seatID = ?";
             $stmt2 = $this->conn->prepare($query2);
             $stmt2->execute([$seatID]);

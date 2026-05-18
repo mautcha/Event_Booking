@@ -3,26 +3,22 @@ session_start();
 include '../config/connect.php';
 require_once '../includes/header.php';
 
-// Security check: Only students should access this view
 if (!isset($_SESSION['userID']) || $_SESSION['role'] !== 'student') {
     echo "<script>window.location.href='dashboard.php';</script>";
     exit();
 }
 
-// 1. CONFIGURE 1-15 ENTRY PAGINATION CONTROLS
-$perPage = 15; // Strict maximum limit of items displayed per page
+$perPage = 15;
 $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 if ($currentPage < 1) $currentPage = 1;
 $offset = ($currentPage - 1) * $perPage;
 
 try {
-    // A. Count only total ACTIVE events to determine accurate page loops
     $countQuery = "SELECT COUNT(*) as total FROM Events WHERE status = 'active'";
     $countStmt = $db->query($countQuery);
     $totalRecords = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
     $totalPages = ceil($totalRecords / $perPage);
 
-    // B. Fetch exactly 15 active records scoped for the current page threshold
     $query = "SELECT * FROM Events 
               WHERE status = 'active' 
               ORDER BY eventDate ASC 

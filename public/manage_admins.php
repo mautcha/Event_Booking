@@ -2,7 +2,6 @@
 session_start();
 include '../config/connect.php';
 
-// Security check: Guard workspace against unauthorized visitors
 if (!isset($_SESSION['userID']) || $_SESSION['role'] !== 'admin') {
     echo "<script>window.location.href='dashboard.php';</script>";
     exit();
@@ -11,12 +10,10 @@ if (!isset($_SESSION['userID']) || $_SESSION['role'] !== 'admin') {
 $messageText = "";
 $messageType = "";
 
-// 1. HANDLE ADMIN REMOVAL LOGIC
-if (isset($_GET['delete_id'])) {
+if (isset($_GET['confirm_delete_id'])) {
     try {
-        $userID = $_GET['delete_id'];
+        $userID = $_GET['confirm_delete_id'];
         
-        // Deleting from Users table cascades to the Admin table automatically
         $stmt = $db->prepare("DELETE FROM Users WHERE userID = ?");
         $stmt->execute([$userID]);
         
@@ -28,25 +25,22 @@ if (isset($_GET['delete_id'])) {
     }
 }
 
-// 2. CONFIGURE PAGINATION CONTROLS (Fulfills strict 1-15 records threshold)
 $perPage = 15;
 $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 if ($currentPage < 1) $currentPage = 1;
 $offset = ($currentPage - 1) * $perPage;
 
 try {
-    // A. Count total administrators to determine the total number of pages
     $countQuery = "SELECT COUNT(*) as total FROM Users WHERE role = 'admin'";
     $countStmt = $db->query($countQuery);
     $totalRecords = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
     $totalPages = ceil($totalRecords / $perPage);
 
-    // B. Fetch only the 15 records needed for the current active page
     $query = "SELECT u.userID, u.name, u.email, a.position, a.department 
               FROM Users u 
               JOIN Admin a ON u.userID = a.userID 
               WHERE u.role = 'admin' 
-              ORDER BY u.name ASC
+              ORDER BY u.name
               LIMIT :limit OFFSET :offset";
               
     $stmt = $db->prepare($query);
@@ -78,6 +72,18 @@ require_once '../includes/header.php';
         </div>
     <?php endif; ?>
 
+    <?php if (isset($_GET['delete_id'])): ?>
+        <div class="alert alert-danger border border-danger p-3 mb-4" role="alert">
+            <h4 class="alert-heading">⚠️ Confirm Administrator Removal</h4>
+            <p>Are you entirely sure you want to permanently delete this administrator profile? This action cannot be undone.</p>
+            <hr>
+            <div class="d-flex justify-content-start">
+                <a href="manage_admins.php?confirm_delete_id=<?= htmlspecialchars($_GET['delete_id']) ?>&page=<?= $currentPage ?>" class="btn btn-danger mr-2">Yes, Confirm Delete</a>
+                <a href="manage_admins.php?page=<?= $currentPage ?>" class="btn btn-secondary">Cancel</a>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <button><a href="create_admin.php" style="text-decoration:none;">+ ADD NEW ADMIN</a></button>
     <br><br>
 
@@ -91,15 +97,14 @@ require_once '../includes/header.php';
                 <th>Actions</th>
             </tr>
             <?php foreach ($admins as $admin): ?>
-                <tr>
+                <tr <?= (isset($_GET['delete_id']) && $_GET['delete_id'] == $admin['userID']) ? 'style="background-color: #fce8e6;"' : '' ?>>
                     <td><?= htmlspecialchars($admin['name']) ?></td>
                     <td><?= htmlspecialchars($admin['email']) ?></td>
                     <td><?= htmlspecialchars($admin['position']) ?></td>
                     <td><?= htmlspecialchars($admin['department']) ?></td>
                     <td>
                         <a href="edit_admin.php?id=<?= $admin['userID'] ?>">Edit</a> |
-                        <a href="manage_admins.php?delete_id=<?= $admin['userID'] ?>&page=<?= $currentPage ?>"
-                           onclick="return confirm('Are you sure you want to permanently delete this administrator profile?')">Delete</a>
+                        <a href="manage_admins.php?delete_id=<?= $admin['userID'] ?>&page=<?= $currentPage ?>" class="text-danger">Delete</a>
                     </td>
                 </tr>
             <?php endforeach; ?>

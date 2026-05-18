@@ -6,11 +6,13 @@ error_reporting(E_ALL);
 include '../config/connect.php';
 require_once '../includes/header.php';
 
-// Security check: Only admins can create other admins
 if (!isset($_SESSION['userID']) || $_SESSION['role'] !== 'admin') {
     echo "<script>window.location.href='dashboard.php';</script>";
     exit();
 }
+
+$messageText = "";
+$messageType = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = $_POST['name'];
@@ -32,11 +34,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $db->commit();
 
-        echo "<script>alert('New Admin Created Successfully!'); window.location.href='manage_admins.php';</script>";
-        exit();
+        $messageText = "New Admin Created Successfully! You can see them in management now.";
+        $messageType = "success";
     } catch (Exception $e) {
         $db->rollBack();
-        die("Error creating admin: " . $e->getMessage());
+        $messageText = "Error creating admin: " . $e->getMessage();
+        $messageType = "danger";
     }
 }
 ?>
@@ -45,6 +48,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <center>
         <p style="color:white"><h2>Add New Administrator</h2></p>
     </center>
+</div>
+
+<div class="container mt-3" style="max-width: 600px;">
+    <?php if (!empty($messageText)): ?>
+        <div class="alert alert-<?= $messageType ?> alert-dismissible fade show" role="alert">
+            <?= htmlspecialchars($messageText) ?>
+            <?php if ($messageType === 'success'): ?>
+                <br><a href="manage_admins.php" class="alert-link">Click here to go back to Manage Admins</a>
+            <?php endif; ?>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    <?php endif; ?>
 </div>
 
 <div style="position: relative; z-index: 10; margin: 20px;">

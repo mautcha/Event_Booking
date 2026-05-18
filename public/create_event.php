@@ -1,6 +1,5 @@
 <?php
 session_start();
-// Turn on error reporting
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
@@ -14,32 +13,31 @@ if (!isset($_SESSION['userID']) || $_SESSION['role'] !== 'admin') {
     exit();
 }
 
+$messageText = "";
+$messageType = "";
+
 // Process the form
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $eventModel = new Event($db);
     
-    // THE FIX: Look up the correct adminID using your logged-in userID
     $stmt = $db->prepare("SELECT adminID FROM Admin WHERE userID = ?");
     $stmt->execute([$_SESSION['userID']]);
     $adminRow = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if ($adminRow) {
-        $adminID = $adminRow['adminID']; // We found the real admin ID!
-        
-        // Format the date string so MySQL accepts it
+        $adminID = $adminRow['adminID'];
         $formattedDate = str_replace('T', ' ', $_POST['eventDate']);
         
-        // Save the event using the correct adminID
         if ($eventModel->create($adminID, $_POST['name'], $formattedDate, $_POST['maxCapacity'])) {
-            echo "<script language='javascript'>
-                    alert('New Event Created Successfully!');
-                    window.location.href = 'manage_events.php';
-                  </script>";
+            $messageText = "New Event Created Successfully!";
+            $messageType = "success";
+        } else {
+            $messageText = "Error: Database failed to record the event transaction.";
+            $messageType = "danger";
         }
     } else {
-        echo "<script language='javascript'>
-                alert('Error: Could not find your Admin profile in the database.');
-              </script>";
+        $messageText = "Error: Could not find your Admin profile in the database.";
+        $messageType = "danger";
     }
 }
 ?>
@@ -50,6 +48,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </center>
 </div>
 
+<div class="container mt-3" style="max-width: 600px;">
+    <?php if (!empty($messageText)): ?>
+        <div class="alert alert-<?= $messageType ?> alert-dismissible fade show" role="alert">
+            <?= htmlspecialchars($messageText) ?>
+            <?php if ($messageType === 'success'): ?>
+                <br><a href="manage_events.php" class="alert-link">Click here to go back to Manage Events</a>
+            <?php endif; ?>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    <?php endif; ?>
+</div>
+
 <div>
     <form method="post">
         <pre>
@@ -57,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             Date & Time:     <input type="datetime-local" name="eventDate" required>
             Max Capacity:    <input type="number" name="maxCapacity" required>
             
-            <input type="submit" value="Save Event">
+            <input type="submit" value="Save Event"> <button type="button" onclick="window.location.href='manage_events.php'">Cancel</button>
         </pre>
     </form>
 </div>

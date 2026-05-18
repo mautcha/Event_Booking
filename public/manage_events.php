@@ -11,10 +11,9 @@ $eventModel = new Event($db);
 $message = "";
 $messageType = "";
 
-// 1. HANDLE ACTIVE / INACTIVE FLAGGING LOGIC
-if (isset($_GET['action']) && isset($_GET['id'])) {
+if (isset($_GET['confirm_action']) && isset($_GET['id'])) {
     $id = $_GET['id'];
-    $action = $_GET['action'];
+    $action = $_GET['confirm_action'];
     
     if ($action === 'deactivate') {
         $eventModel->toggleStatus($id, 'inactive');
@@ -27,14 +26,12 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
     }
 }
 
-// 2. SETUP CATEGORIZED TABS & PAGINATION PARAMS
-$currentTab = $_GET['tab'] ?? 'active'; // Default view tab
-$perPage = 15; // Hard limit per specification requirement
+$currentTab = $_GET['tab'] ?? 'active';
+$perPage = 15;
 $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 if ($currentPage < 1) $currentPage = 1;
 $offset = ($currentPage - 1) * $perPage;
 
-// Fetch data scoped strictly by pagination thresholds
 $events = $eventModel->readPaginated($currentTab, $perPage, $offset);
 $totalRecords = $eventModel->countTotalByStatus($currentTab);
 $totalPages = ceil($totalRecords / $perPage);
@@ -55,6 +52,27 @@ require_once '../includes/header.php';
             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
             </button>
+        </div>
+    <?php endif; ?>
+
+    <?php if (isset($_GET['action']) && isset($_GET['id'])): ?>
+        <?php
+            $reqAction = $_GET['action'];
+            $reqId = $_GET['id'];
+            $alertClass = ($reqAction === 'deactivate') ? 'alert-warning' : 'alert-info';
+        ?>
+        <div class="alert <?= $alertClass ?> border p-3 mb-4" role="alert">
+            <h4 class="alert-heading">📌 Action Required: Confirm Status Modification</h4>
+            <p>Are you sure you want to change the tracking status flag of this event listing to <strong><?= strtoupper($reqAction) ?></strong>?</p>
+            <hr>
+            <div class="d-flex">
+                <a href="manage_events.php?tab=<?= $currentTab ?>&confirm_action=<?= $reqAction ?>&id=<?= $reqId ?>&page=<?= $currentPage ?>" class="btn btn-sm <?= ($reqAction === 'deactivate') ? 'btn-danger' : 'btn-success' ?> mr-2">
+                    Yes, Proceed
+                </a>
+                <a href="manage_events.php?tab=<?= $currentTab ?>&page=<?= $currentPage ?>" class="btn btn-sm btn-secondary">
+                    Cancel Action
+                </a>
+            </div>
         </div>
     <?php endif; ?>
 
@@ -83,7 +101,7 @@ require_once '../includes/header.php';
         <tbody>
             <?php if (count($events) > 0): ?>
                 <?php foreach ($events as $e): ?>
-                <tr>
+                <tr <?= (isset($_GET['id']) && $_GET['id'] == $e['eventID']) ? 'style="background-color: #fff3cd;"' : '' ?>>
                     <td><?= htmlspecialchars($e['name']) ?></td>
                     <td><?= htmlspecialchars($e['eventDate']) ?></td>
                     <td><?= htmlspecialchars($e['maxCapacity']) ?> attendees</td>
@@ -94,13 +112,9 @@ require_once '../includes/header.php';
                         <a href="edit_event.php?id=<?= $e['eventID'] ?>" class="btn btn-sm btn-warning">Edit Details</a>
                         
                         <?php if ($currentTab === 'active'): ?>
-                            <a href="manage_events.php?tab=active&action=deactivate&id=<?= $e['eventID'] ?>&page=<?= $currentPage ?>"
-                               class="btn btn-sm btn-danger"
-                               onclick="return confirm('Are you sure you want to flag this event as INACTIVE?')">Deactivate</a>
+                            <a href="manage_events.php?tab=active&action=deactivate&id=<?= $e['eventID'] ?>&page=<?= $currentPage ?>" class="btn btn-sm btn-danger">Deactivate</a>
                         <?php else: ?>
-                            <a href="manage_events.php?tab=inactive&action=activate&id=<?= $e['eventID'] ?>&page=<?= $currentPage ?>"
-                               class="btn btn-sm btn-success"
-                               onclick="return confirm('Are you sure you want to restore this event to ACTIVE?')">Reactivate</a>
+                            <a href="manage_events.php?tab=inactive&action=activate&id=<?= $e['eventID'] ?>&page=<?= $currentPage ?>" class="btn btn-sm btn-success">Reactivate</a>
                         <?php endif; ?>
                     </td>
                 </tr>
